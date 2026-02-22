@@ -16,10 +16,17 @@ public class MenuListener implements Listener {
     @EventHandler
     private void PlayerInitEvent(PlayerLocallyInitializedEvent event){
         Player player = event.getPlayer();
+        Item itemAir;
+        try {
+            itemAir = Item.AIR_ITEM;
+        }catch (Exception e){
+            // 回退到 ID 获取
+            itemAir = Item.get(0);
+        }
         if(RYSMenuXMain.isItemSwitcher()){
-            if(RYSMenuXMain.getItem() != Item.AIR_ITEM && !player.getInventory().contains(RYSMenuXMain.getItem())){
+            if(RYSMenuXMain.getItem() != itemAir && !player.getInventory().contains(RYSMenuXMain.getItem())){
                 player.giveItem(RYSMenuXMain.getItem());
-                player.sendMessage("§a您获得了 §e"+RYSMenuXMain.getItemName()+" §a手持它点击就能打开菜单主页面啦!");
+                player.sendMessage("§a您获得了 §e"+RYSMenuXMain.getItemName()+" §a!手持它点击就能打开菜单主页面啦!");
             }
         }
     }
@@ -42,7 +49,7 @@ public class MenuListener implements Listener {
             CompoundTag tag = player.getInventory().getItemInHand().getNamedTag();
             if(tag != null && !RYSMenuXMain.isItemIsDrop() && player.getInventory().getItemInHand().getNamedTag().contains("menux")){
                 event.setCancelled();
-                player.sendMessage("§c暂时无法丢弃 §e"+RYSMenuXMain.getItemName()+" §c!");
+                player.sendMessage("§c您暂时无法丢弃 §e"+RYSMenuXMain.getItemName()+" §c!");
             }
         }
     }

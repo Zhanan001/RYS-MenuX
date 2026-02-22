@@ -8,6 +8,8 @@ import cn.reiyans.RYSMenuX.RYSMenuXMain;
 
 public class MenuCheckTask extends PluginTask<RYSMenuXMain> {
 
+    private final Item itemAir = Item.get(0);
+
     public MenuCheckTask( RYSMenuXMain owner) {
         super(owner);
     }
@@ -17,7 +19,7 @@ public class MenuCheckTask extends PluginTask<RYSMenuXMain> {
         for(Player player: Server.getInstance().getOnlinePlayers().values()){
             if(player != null && RYSMenuXMain.isItemSwitcher()){
                 Item item = RYSMenuXMain.getItem();
-                if(item != Item.AIR_ITEM && !player.getInventory().contains(item)){
+                if(item != itemAir && !player.getInventory().contains(item)){
                     player.giveItem(item);
                     player.sendMessage("§a您的 §e"+RYSMenuXMain.getItemName()+" §a似乎遗失了!现为您重新发放!");
                 }

@@ -62,8 +62,8 @@ public class MenuForm {
             }
             case 4->{
                 SliderButton button1 = (SliderButton) button;
-                FormCustom form = new FormCustom();form.addElement(new ElementSlider(button1.getTip(),button1.getMin(),button1.getMax(),1,button1.getMin()));
-                player.showFormWindow(form.onResponded(response -> button1.costMoneyExecuteCmd(player,(int)Math.floor(response.getSliderResponse(0))+"",menuFileName)));
+                FormCustom form = new FormCustom();form.addElement(new ElementSlider(button1.getTip(),(int)Math.floor(button1.getMin()),(int)Math.floor(button1.getMax()),1,(int)Math.floor(button1.getMin())));
+                player.showFormWindow(form.onResponded(response -> button1.costMoneyExecuteCmd(player,button1.getMultiplier()*(int)Math.floor(response.getSliderResponse(0))+"",menuFileName)));
             }
             case 5->{
                 ModalButton button1 = (ModalButton) button;

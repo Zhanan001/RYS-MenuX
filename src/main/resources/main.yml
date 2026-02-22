@@ -40,6 +40,7 @@ Button4:
   name: "点我滑动选择并执行指令"
   texture: "无"
   tip: "请通过滑动来选择内容"
+  multiplier: 1
   min: 1
   max: 10
   money: 0

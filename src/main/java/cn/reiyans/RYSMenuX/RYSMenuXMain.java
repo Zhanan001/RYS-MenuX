@@ -3,6 +3,8 @@ package cn.reiyans.RYSMenuX;
 import cn.nukkit.Server;
 import cn.nukkit.command.ConsoleCommandSender;
 import cn.nukkit.item.Item;
+import cn.nukkit.item.ItemApple;
+import cn.nukkit.item.ItemClock;
 import cn.nukkit.item.enchantment.Enchantment;
 import cn.nukkit.nbt.tag.CompoundTag;
 import cn.nukkit.plugin.PluginBase;
@@ -119,9 +121,10 @@ public class RYSMenuXMain extends PluginBase {
                 }
                 case 4-> {
                     String tip = menuConfig.getString("Button"+i+".tip");
+                    double multiplier = menuConfig.getDouble("Button"+i+".multiplier");
                     int min = menuConfig.getInt("Button"+i+".min");
                     int max = menuConfig.getInt("Button"+i+".max");
-                    buttons.add(new SliderButton(type,name,texture,money,allCmds,tip,min,max,permission));
+                    buttons.add(new SliderButton(type,name,texture,money,allCmds,tip,multiplier,min,max,permission));
                 }
                 case 5-> {
                     String tip = menuConfig.getString("Button"+i+".tip");
@@ -159,7 +162,13 @@ public class RYSMenuXMain extends PluginBase {
 
     private static Item getMenuItem(){
         String[] itemID = getItemID().split(":");
-        Item item = Item.AIR_ITEM;
+        Item item;
+        try {
+            item = Item.AIR_ITEM;
+        }catch (Exception e){
+            // 回退到 ID 获取
+            item = Item.get(0);
+        }
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("menux",true);
         if(isInteger(itemID[0]) && isInteger(itemID[1])){
