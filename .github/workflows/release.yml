@@ -5,6 +5,10 @@ on:
     branches: [ "feature/variablemanage-hook" ]
   workflow_dispatch:
 
+# Allow the workflow to create releases using the built-in token (requires repo Actions permission Read & write)
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -57,6 +61,23 @@ jobs:
       - name: Build the plugin with Maven
         run: mvn -B -DskipTests package
 
+      - name: Show build output (for debugging)
+        run: ls -la target || true
+
+      - name: Find produced jar
+        id: find_artifact
+        run: |
+          set -e
+          ARTIFACT=$(ls target/*.jar 2>/dev/null | head -n 1 || true)
+          if [ -z "$ARTIFACT" ]; then
+            echo "No jar found in target/ — build failed or artifact name differs."
+            ls -la target || true
+            exit 1
+          fi
+          echo "Found artifact: $ARTIFACT"
+          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(basename "$ARTIFACT")" >> $GITHUB_OUTPUT
+
       - name: Create Release (softprops)
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -66,13 +87,14 @@ jobs:
           body: Automated release from workflow
           draft: false
           prerelease: false
+        # Use a user-provided PAT (RELEASE_TOKEN) if present, otherwise default to GITHUB_TOKEN.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Artifact
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/*.jar
-          asset_name: rysmenux-${{ github.sha }}.jar
+          asset_path: ${{ steps.find_artifact.outputs.artifact }}
+          asset_name: ${{ steps.find_artifact.outputs.artifact_name }}
           asset_content_type: application/java-archive
