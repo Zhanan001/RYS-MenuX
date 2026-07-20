@@ -9,9 +9,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      # 临时允许使用已弃用的 Node 20 以兼容旧的 Node-based actions
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
     steps:
-      - name: Checkout
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -26,13 +28,11 @@ jobs:
         run: |
           set -e
           # 如果你有这些本地 system-scope 依赖，建议把它们上传到 libs/
-          MISSING=0
           for f in libs/gui-v1.15.1.jar libs/EconomyAPI.jar; do
             if [ ! -f "$f" ]; then
               echo "WARN: Missing optional local lib: $f (OK if you don't use system-scope deps)"
             fi
           done
-          # Nukkit.jar 可选：若存在则直接安装到本地 m2（提高稳定性）
           if [ -f libs/Nukkit.jar ]; then
             echo "Found libs/Nukkit.jar, will install to local maven repo"
           else
@@ -50,7 +50,6 @@ jobs:
               -Dversion=MOT-SNAPSHOT \
               -Dpackaging=jar
           else
-            echo "Cloning MemoriesOfTime/Nukkit-MOT and running mvn install (may take some time)"
             git clone --depth=1 https://github.com/MemoriesOfTime/Nukkit-MOT.git /tmp/Nukkit-MOT || (echo "Clone failed"; exit 1)
             cd /tmp/Nukkit-MOT
             mvn -B -DskipTests install || (echo "Nukkit-MOT build failed; consider uploading compiled Nukkit.jar to libs/"; exit 1)
@@ -71,7 +70,6 @@ jobs:
         id: find_artifact
         run: |
           set -e
-          # 找到第一个 jar（如果你需要特定名称，请替换下面 pattern）
           ARTIFACT=$(ls target/*.jar 2>/dev/null | head -n 1 || true)
           if [ -z "$ARTIFACT" ]; then
             echo "No jar found in target/ — build likely failed or artifact name differs."
