@@ -9,68 +9,96 @@ import moe.him188.gui.window.FormModal;
 import moe.him188.gui.window.FormSimple;
 
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 public class MenuForm {
 
-    public static void showUI(Player player,Menu menu,String menuFileName){
-        FormSimple form = new FormSimple(menu.getTitle(), menu.getText());
+    public static void showUI(Player player, Menu menu, String menuFileName){
+        String title = RYSMenuXMain.getInstance().replaceVariables(player, menu.getTitle());
+        String body = RYSMenuXMain.getInstance().replaceVariables(player, menu.getText());
+        FormSimple form = new FormSimple(title, body);
         LinkedHashMap<Integer,BaseButton> buttonTemp = new LinkedHashMap<>();
         int i = 0;
-        for(BaseButton button:menu.getButtons()){
+        for(BaseButton button : menu.getButtons()){
             if(button.getPermission().equals("true") || player.hasPermission(button.getPermission())){
+                String btnName = RYSMenuXMain.getInstance().replaceVariables(player, button.getName());
                 if(button.isEnableTexture()){
-                    form.addButton(new ElementButton(button.getName(),new ElementButtonImageData("path",button.getTexture())));
-                }else{
-                    form.addButton(button.getName());
+                    form.addButton(new ElementButton(btnName, new ElementButtonImageData("path", button.getTexture())));
+                } else {
+                    form.addButton(btnName);
                 }
-                buttonTemp.put(i,button);
+                buttonTemp.put(i, button);
                 i++;
             }
         }
-        player.showFormWindow(form.onClicked(response -> actButton(player,buttonTemp.get(response),menuFileName)));
+        player.showFormWindow(form.onClicked(response -> actButton(player, buttonTemp.get(response), menuFileName)));
     }
 
-
-    public static void noticeUI(Player player, String title, String text,String menuFileName){
-        FormModal form = new FormModal(title,text, "返回上个界面","取消");
+    public static void noticeUI(Player player, String title, String text, String menuFileName){
+        String t = RYSMenuXMain.getInstance().replaceVariables(player, title);
+        String b = RYSMenuXMain.getInstance().replaceVariables(player, text);
+        FormModal form = new FormModal(t, b, "返回上个界面", "取消");
         player.showFormWindow(form.onResponded(response -> {
             if(response){
-                showUI(player, RYSMenuXMain.getMenus().get(menuFileName),menuFileName);
+                showUI(player, RYSMenuXMain.getMenus().get(menuFileName), menuFileName);
             }
         }));
     }
 
     public static void tipUI(Player player, String title, String text){
-        FormModal form = new FormModal(title,text, "知道了","取消");
+        String t = RYSMenuXMain.getInstance().replaceVariables(player, title);
+        String b = RYSMenuXMain.getInstance().replaceVariables(player, text);
+        FormModal form = new FormModal(t, b, "知道了", "取消");
         player.showFormWindow(form.onResponded(response -> {
         }));
     }
 
-    public static void actButton(Player player,BaseButton button,String menuFileName){
+    public static void actButton(Player player, BaseButton button, String menuFileName){
+        if(button == null) return;
         switch (button.getType()){
-            case 1-> button.costMoneyExecuteCmd(player,"",menuFileName);
-            case 2->{
-                InputButton button1 = (InputButton)button;
-                FormCustom form = new FormCustom();form.addElement(new ElementInput(button1.getTip(),button1.getText()));
-                player.showFormWindow(form.onResponded(response -> button1.costMoneyExecuteCmd(player,response.getInputResponse(0),menuFileName)));
-
+            case 1 -> button.costMoneyExecuteCmd(player, "", menuFileName);
+            case 2 -> {
+                InputButton button1 = (InputButton) button;
+                String tip = RYSMenuXMain.getInstance().replaceVariables(player, button1.getTip());
+                String def = RYSMenuXMain.getInstance().replaceVariables(player, button1.getText());
+                FormCustom form = new FormCustom();
+                form.addElement(new ElementInput(tip, def));
+                player.showFormWindow(form.onResponded(response ->
+                        button1.costMoneyExecuteCmd(player, response.getInputResponse(0), menuFileName)));
             }
-            case 3->{
+            case 3 -> {
                 ChoseButton button1 = (ChoseButton) button;
-                FormCustom form = new FormCustom();form.addElement(new ElementDropdown(button1.getTip(),button1.getList()));
-                player.showFormWindow(form.onResponded(response -> button1.costMoneyExecuteCmd(player,response.getDropdownResponse(0).getElementContent(),menuFileName)));
+                String tip = RYSMenuXMain.getInstance().replaceVariables(player, button1.getTip());
+                // replace each list item
+                List<String> rawList = button1.getList();
+                ArrayList<String> replaced = new ArrayList<>();
+                for(String item : rawList){
+                    replaced.add(RYSMenuXMain.getInstance().replaceVariables(player, item));
+                }
+                FormCustom form = new FormCustom();
+                form.addElement(new ElementDropdown(tip, replaced));
+                player.showFormWindow(form.onResponded(response ->
+                        button1.costMoneyExecuteCmd(player, response.getDropdownResponse(0).getElementContent(), menuFileName)));
             }
-            case 4->{
+            case 4 -> {
                 SliderButton button1 = (SliderButton) button;
-                FormCustom form = new FormCustom();form.addElement(new ElementSlider(button1.getTip(),(int)Math.floor(button1.getMin()),(int)Math.floor(button1.getMax()),1,(int)Math.floor(button1.getMin())));
-                player.showFormWindow(form.onResponded(response -> button1.costMoneyExecuteCmd(player,button1.getMultiplier()*(int)Math.floor(response.getSliderResponse(0))+"",menuFileName)));
+                String tip = RYSMenuXMain.getInstance().replaceVariables(player, button1.getTip());
+                int min = (int)Math.floor(button1.getMin());
+                int max = (int)Math.floor(button1.getMax());
+                int def = min;
+                FormCustom form = new FormCustom();
+                form.addElement(new ElementSlider(tip, min, max, 1, def));
+                player.showFormWindow(form.onResponded(response ->
+                        button1.costMoneyExecuteCmd(player, button1.getMultiplier() * (int)Math.floor(response.getSliderResponse(0)) + "", menuFileName)));
             }
-            case 5->{
+            case 5 -> {
                 ModalButton button1 = (ModalButton) button;
-                FormModal form = new FormModal(button1.getTip(),"确认","取消");
+                String tip = RYSMenuXMain.getInstance().replaceVariables(player, button1.getTip());
+                FormModal form = new FormModal(tip, "确认", "取消");
                 player.showFormWindow(form.onResponded(response -> {
                     if(response){
-                        button1.costMoneyExecuteCmd(player,"",menuFileName);
+                        button1.costMoneyExecuteCmd(player, "", menuFileName);
                     }
                 }));
             }
