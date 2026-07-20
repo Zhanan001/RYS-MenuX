@@ -8,9 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
     steps:
-      - name: Checkout repository (full history)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
