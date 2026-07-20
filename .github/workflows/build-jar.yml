@@ -1,0 +1,81 @@
+name: Build Jar - Maven (artifact)
+
+on:
+  push:
+    branches: [ "feature/variablemanage-hook" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Ensure required local libs exist
+        run: |
+          set -e
+          MISSING=0
+          for f in libs/gui-v1.15.1.jar libs/EconomyAPI.jar; do
+            if [ ! -f "$f" ]; then
+              echo "Missing required file: $f"
+              MISSING=1
+            fi
+          done
+          if [ $MISSING -eq 1 ]; then
+            echo "Please add the missing jar files to the libs/ directory on the feature/variablemanage-hook branch and re-run the workflow."
+            exit 1
+          fi
+
+      - name: Prepare Nukkit dependency (install to local m2)
+        run: |
+          set -e
+          if [ -f libs/Nukkit.jar ]; then
+            echo "Using provided libs/Nukkit.jar"
+            mvn org.apache.maven.plugins:maven-install-plugin:3.1.0:install-file \
+              -Dfile=libs/Nukkit.jar \
+              -DgroupId=cn.nukkit \
+              -DartifactId=Nukkit \
+              -Dversion=MOT-SNAPSHOT \
+              -Dpackaging=jar
+          else
+            echo "libs/Nukkit.jar not found — cloning and installing MemoriesOfTime/Nukkit-MOT"
+            git clone --depth=1 https://github.com/MemoriesOfTime/Nukkit-MOT.git /tmp/Nukkit-MOT
+            cd /tmp/Nukkit-MOT
+            mvn -B -DskipTests install
+          fi
+
+      - name: Build the plugin with Maven
+        run: mvn -B -DskipTests package
+
+      - name: Show build output (for debugging)
+        run: ls -la target || true
+
+      - name: Find produced jar
+        id: find_artifact
+        run: |
+          set -e
+          ARTIFACT=$(ls target/*.jar 2>/dev/null | head -n 1 || true)
+          if [ -z "$ARTIFACT" ]; then
+            echo "No jar found in target/ — build failed or artifact name differs."
+            ls -la target || true
+            exit 1
+          fi
+          echo "Found artifact: $ARTIFACT"
+          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(basename "$ARTIFACT")" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifact for manual download
+        uses: actions/upload-artifact@v4
+        with:
+          name: rysmenux-${{ github.sha }}
+          path: ${{ steps.find_artifact.outputs.artifact }}
