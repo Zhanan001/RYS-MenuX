@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -21,26 +21,27 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Ensure required local libs exist
+      - name: Ensure required local libs exist (gui / EconomyAPI optional)
         run: |
           set -e
+          # 如果你有这些本地 system-scope 依赖，建议把它们上传到 libs/
           MISSING=0
           for f in libs/gui-v1.15.1.jar libs/EconomyAPI.jar; do
             if [ ! -f "$f" ]; then
-              echo "Missing required file: $f"
-              MISSING=1
+              echo "WARN: Missing optional local lib: $f (OK if you don't use system-scope deps)"
             fi
           done
-          if [ $MISSING -eq 1 ]; then
-            echo "Please add the missing jar files to the libs/ directory on the feature/variablemanage-hook branch and re-run the workflow."
-            exit 1
+          # Nukkit.jar 可选：若存在则直接安装到本地 m2（提高稳定性）
+          if [ -f libs/Nukkit.jar ]; then
+            echo "Found libs/Nukkit.jar, will install to local maven repo"
+          else
+            echo "No libs/Nukkit.jar found - workflow will try to clone and build MemoriesOfTime/Nukkit-MOT"
           fi
 
       - name: Prepare Nukkit dependency (install to local m2)
         run: |
           set -e
           if [ -f libs/Nukkit.jar ]; then
-            echo "Using provided libs/Nukkit.jar"
             mvn org.apache.maven.plugins:maven-install-plugin:3.1.0:install-file \
               -Dfile=libs/Nukkit.jar \
               -DgroupId=cn.nukkit \
@@ -48,25 +49,31 @@ jobs:
               -Dversion=MOT-SNAPSHOT \
               -Dpackaging=jar
           else
-            echo "libs/Nukkit.jar not found — cloning and installing MemoriesOfTime/Nukkit-MOT"
-            git clone --depth=1 https://github.com/MemoriesOfTime/Nukkit-MOT.git /tmp/Nukkit-MOT
+            echo "Cloning MemoriesOfTime/Nukkit-MOT and running mvn install (may take some time)"
+            git clone --depth=1 https://github.com/MemoriesOfTime/Nukkit-MOT.git /tmp/Nukkit-MOT || (echo "Clone failed"; exit 1)
             cd /tmp/Nukkit-MOT
-            mvn -B -DskipTests install
+            mvn -B -DskipTests install || (echo "Nukkit-MOT build failed; consider uploading compiled Nukkit.jar to libs/"; exit 1)
           fi
 
       - name: Build the plugin with Maven
-        run: mvn -B -DskipTests package
+        run: |
+          set -e
+          mvn -B -DskipTests package
 
       - name: Show build output (for debugging)
-        run: ls -la target || true
+        run: |
+          echo "==== target/ listing ===="
+          ls -la target || true
+          echo "==== end listing ===="
 
       - name: Find produced jar
         id: find_artifact
         run: |
           set -e
+          # 找到第一个 jar（如果你需要特定名称，请替换下面 pattern）
           ARTIFACT=$(ls target/*.jar 2>/dev/null | head -n 1 || true)
           if [ -z "$ARTIFACT" ]; then
-            echo "No jar found in target/ — build failed or artifact name differs."
+            echo "No jar found in target/ — build likely failed or artifact name differs."
             ls -la target || true
             exit 1
           fi
