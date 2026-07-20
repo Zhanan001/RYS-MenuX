@@ -112,39 +112,45 @@ public class RYSMenuXMain extends PluginBase {
 
     public ArrayList<BaseButton> loadMenuConfig(Config menuConfig){
         ArrayList<BaseButton> buttons = new ArrayList<>();
-        for(int i=1;menuConfig.exists("Button"+i);i++){
-            int type =  menuConfig.getInt("Button"+i+."type");
-            String name =  menuConfig.getString("Button"+i+."name");
-            String texture =  menuConfig.getString("Button"+i+."texture");
-            int money =  menuConfig.getInt("Button"+i+."money");
-            List<String> allCmds =  menuConfig.getStringList("Button"+i+."cmd");
-            String permission =  menuConfig.getString("Button"+i+."permission");
+        for(int i=1; menuConfig.exists("Button" + i); i++){
+            int type = menuConfig.getInt("Button" + i + ".type");
+            String name = menuConfig.getString("Button" + i + ".name");
+            String texture = menuConfig.getString("Button" + i + ".texture");
+            int money = menuConfig.getInt("Button" + i + ".money");
+            List<String> allCmds = menuConfig.getStringList("Button" + i + ".cmd");
+            String permission = menuConfig.getString("Button" + i + ".permission");
             switch (type){
-                case 1-> buttons.add(new NormalButton(type,name,texture,money,allCmds,permission));
-                case 2-> {
-                    String tip = menuConfig.getString("Button"+i+."tip");
-                    String text = menuConfig.getString("Button"+i+."text");
+                case 1:
+                    buttons.add(new NormalButton(type,name,texture,money,allCmds,permission));
+                    break;
+                case 2: {
+                    String tip = menuConfig.getString("Button" + i + ".tip");
+                    String text = menuConfig.getString("Button" + i + ".text");
                     buttons.add(new InputButton(type,name,texture,money,allCmds,tip,text,permission));
+                    break;
                 }
-                case 3-> {
-                    String tip = menuConfig.getString("Button"+i+."tip");
-                    List<String> list = menuConfig.getStringList("Button"+i+."list");
+                case 3: {
+                    String tip = menuConfig.getString("Button" + i + ".tip");
+                    List<String> list = menuConfig.getStringList("Button" + i + ".list");
                     buttons.add(new ChoseButton(type,name,texture,money,allCmds,tip,new ArrayList<>(list),permission));
+                    break;
                 }
-                case 4-> {
-                    String tip = menuConfig.getString("Button"+i+."tip");
-                    double multiplier = menuConfig.getDouble("Button"+i+."multiplier");
-                    int min = menuConfig.getInt("Button"+i+."min");
-                    int max = menuConfig.getInt("Button"+i+."max");
+                case 4: {
+                    String tip = menuConfig.getString("Button" + i + ".tip");
+                    double multiplier = menuConfig.getDouble("Button" + i + ".multiplier");
+                    int min = menuConfig.getInt("Button" + i + ".min");
+                    int max = menuConfig.getInt("Button" + i + ".max");
                     buttons.add(new SliderButton(type,name,texture,money,allCmds,tip,multiplier,min,max,permission));
+                    break;
                 }
-                case 5-> {
-                    String tip = menuConfig.getString("Button"+i+."tip");
+                case 5: {
+                    String tip = menuConfig.getString("Button" + i + ".tip");
                     buttons.add(new ModalButton(type,name,texture,money,allCmds,tip,permission));
+                    break;
                 }
             }
         }
-        this.getLogger().info("该菜单页面共加载了:+buttons.size()+个按钮!");
+        this.getLogger().info("该菜单页面共加载了: " + buttons.size() + " 个按钮!");
         return buttons;
     }
 
