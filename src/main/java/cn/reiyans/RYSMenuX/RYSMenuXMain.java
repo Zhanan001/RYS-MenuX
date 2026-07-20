@@ -14,7 +14,9 @@ import cn.reiyans.RYSMenuX.Command.MenuCommand;
 import cn.reiyans.RYSMenuX.Listener.MenuListener;
 import cn.reiyans.RYSMenuX.Menu.Menu;
 import cn.reiyans.RYSMenuX.Menu.MenuCheckTask;
+import cn.reiyans.RYSMenuX.variable.VariableManageHook;
 import lombok.Getter;
+import cn.nukkit.Player;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -47,6 +49,9 @@ public class RYSMenuXMain extends PluginBase {
     @Getter
     private static String moneyName;
 
+    @Getter
+    private VariableManageHook variableManageHook;
+
     public void onLoad() {
         instance = this;
         this.saveDefaultConfig();
@@ -68,6 +73,13 @@ public class RYSMenuXMain extends PluginBase {
         moneyName = this.getConfig().getString("MoneyName");
         //物品先加载信息再初始化
         item = getMenuItem();
+        // 初始化 VariableManage Hook（软依赖）
+        this.variableManageHook = new VariableManageHook();
+        if(this.variableManageHook.isAvailable()){
+            this.getLogger().info("已检测到 VariableManage，变量替换已启用。");
+        } else {
+            this.getLogger().info("未检测到 VariableManage，使用回退替换（仅支持 %p/%i）。");
+        }
         //遗失菜单检测任务
         if(itemSwitcher){
             Server.getInstance().getScheduler().scheduleRepeatingTask(new MenuCheckTask(this), getItemCheckTime()*20);
@@ -85,14 +97,14 @@ public class RYSMenuXMain extends PluginBase {
     public void onDisable() {this.getLogger().info("正在关闭RYSMenuX！");}
 
     private void loadOneMenu(File file,String menuFileName){
-        Config menuConfig = new Config(file.toString() +"/"+menuFileName+".yml",Config.YAML);
+        Config menuConfig = new Config(file.toString() +"/"+menuFileName+."yml",Config.YAML);
         menus.put(menuFileName,new Menu(menuConfig.getString("PageTitle"),menuConfig.getString("PageText"), loadMenuConfig(menuConfig)));
         this.getLogger().info("加载菜单页面>"+menuFileName);
     }
 
     private void loadAllMenu(File file){
         for(String menuName:this.getAllMenuFileNames(file)){
-            Config menuConfig = new Config(this.getPagesFile().toString() +"/"+menuName+".yml",Config.YAML);
+            Config menuConfig = new Config(this.getPagesFile().toString() +"/"+menuName+."yml",Config.YAML);
             menus.put(menuName,new Menu(menuConfig.getString("PageTitle"),menuConfig.getString("PageText"), loadMenuConfig(menuConfig)));
             this.getLogger().info("加载菜单页面>"+menuName);
         }
@@ -199,5 +211,17 @@ public class RYSMenuXMain extends PluginBase {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    // 对文本进行变量替换：先做基础替换，再尝试 VariableManage
+    public String replaceVariables(Player player, String text){
+        if(text == null) return null;
+        if(player != null){
+            text = text.replace("%p", player.getName());
+        }
+        if(this.variableManageHook != null && this.variableManageHook.isAvailable()){
+            return this.variableManageHook.replace(player, text);
+        }
+        return text;
     }
 }
