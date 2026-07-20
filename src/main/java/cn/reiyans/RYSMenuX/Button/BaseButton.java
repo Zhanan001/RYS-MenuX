@@ -81,10 +81,14 @@ public abstract class BaseButton{
 
     private void executeCmd(Player player,String var){
         for(String cmd:this.getOpCmds()){
-            Server.getInstance().dispatchCommand(RYSMenuXMain.getConsole(),cmd.replace("%p",player.getName()).replace("%i",var));
+            String rendered = cmd.replace("%p",player.getName()).replace("%i",var);
+            rendered = RYSMenuXMain.getInstance().replaceVariables(player, rendered);
+            Server.getInstance().dispatchCommand(RYSMenuXMain.getConsole(),rendered);
         }
         for(String cmd:this.getPlayerCmds()){
-            Server.getInstance().dispatchCommand(player,cmd.replace("%p",player.getName()).replace("%i",var));
+            String rendered = cmd.replace("%p",player.getName()).replace("%i",var);
+            rendered = RYSMenuXMain.getInstance().replaceVariables(player, rendered);
+            Server.getInstance().dispatchCommand(player,rendered);
         }
     }
 }
