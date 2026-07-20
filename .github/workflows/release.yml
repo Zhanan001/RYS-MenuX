@@ -57,16 +57,17 @@ jobs:
       - name: Build the plugin with Maven
         run: mvn -B -DskipTests package
 
-      - name: Create Release
+      - name: Create Release (softprops)
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: rysmenux-${{ github.sha }}
-          release_name: RYSMenuX-${{ github.sha }}
+          name: RYSMenuX-${{ github.sha }}
           body: Automated release from workflow
           draft: false
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Artifact
         uses: actions/upload-release-asset@v1
